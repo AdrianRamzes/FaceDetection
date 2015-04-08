@@ -1,0 +1,22 @@
+﻿<Window x:Class="FaceDetectionExample.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:viewModels="clr-namespace:FaceDetectionExample.ViewModels"
+        xmlns:converters="clr-namespace:FaceDetectionExample.Converters"
+        Title="MainWindow" Height="350" Width="525">
+    <Window.Resources>
+        <viewModels:MainWindowViewModel x:Key="MainWindowViewModel" />
+        <converters:BitmapToImageSourceConverter x:Key="BitmapToImageSourceConverter"/>
+    </Window.Resources>
+    <Grid DataContext="{StaticResource MainWindowViewModel}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="30"/>
+        </Grid.RowDefinitions>
+
+        <Image Name="v_Image_Frame" Source="{Binding Frame, Converter={StaticResource BitmapToImageSourceConverter}}" Stretch="Uniform"/>
+
+        <Button Name="v_Button_ToggleWebCam" Grid.Row="1" Command="{Binding ToggleWebServiceCommand}" Click="v_Button_ToggleWebCam_Click" VerticalAlignment="Center" Content="Start!" HorizontalAlignment="Center" Margin="5"/>
+
+    </Grid>
+</Window>
