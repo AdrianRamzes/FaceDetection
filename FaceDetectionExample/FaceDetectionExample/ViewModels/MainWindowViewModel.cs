@@ -15,10 +15,6 @@ namespace FaceDetectionExample.ViewModels
     public class MainWindowViewModel : BaseViewModel
     {
         private FaceDetectionService _faceDetectionService;
-        private WebCamService _webCamService;
-
-        private List<Rectangle> _faces = new List<Rectangle>();
-        private List<Rectangle> _eyes = new List<Rectangle>();
 
         private Bitmap _frame;
         public Bitmap Frame
@@ -57,64 +53,13 @@ namespace FaceDetectionExample.ViewModels
 
         private void InitializeServices()
         {
-            _webCamService = new WebCamService();
-            _webCamService.ImageChanged += _webCamService_ImageChanged;
             _faceDetectionService = new FaceDetectionService();
+            _faceDetectionService.ImageWithDetectionChanged += _faceDetectionService_ImageChanged;
         }
 
-        private bool isRunning = false;
-        private async void _webCamService_ImageChanged(object sender, Image<Bgr, byte> image)
+        private void _faceDetectionService_ImageChanged(object sender, Image<Bgr, byte> image)
         {
-            bool isDetecting = false;
-
-            if (!isRunning)
-            {
-                isRunning = true;
-                isDetecting = true;
-                var result = await DetectAsync(image);
-                //var result = await DetectFacesAsync(image);
-                //_faces = result;
-
-                _faces = result.Item1;
-                _eyes = result.Item2;
-
-                isRunning = false;
-            }
-
-            if (!isDetecting)
-            {
-                foreach (Rectangle face in _faces)
-                    image.Draw(face, new Bgr(Color.Red), 2);
-                foreach (Rectangle eye in _eyes)
-                    image.Draw(eye, new Bgr(Color.Blue), 2);
-
-                this.Frame = image.Bitmap;
-            }
-        }
-
-        private Task<Tuple<List<Rectangle>, List<Rectangle>>> DetectAsync(Image<Bgr, byte> image)
-        {
-            return Task.Run(() =>
-            {
-                List<Rectangle> faces = new List<Rectangle>();
-                List<Rectangle> eyes = new List<Rectangle>();
-
-                _faceDetectionService.Detect(image, faces, eyes);
-
-                return new Tuple<List<Rectangle>, List<Rectangle>>(faces, eyes);
-            });
-        }
-
-        private Task<List<Rectangle>> DetectFacesAsync(Image<Bgr, byte> image)
-        {
-            return Task.Run(() =>
-            {
-                List<Rectangle> faces = new List<Rectangle>();
-
-                _faceDetectionService.DetectFace(image, faces);
-
-                return faces;
-            });
+            this.Frame = image.Bitmap;
         }
 
         private void InitializeCommands()
@@ -124,13 +69,13 @@ namespace FaceDetectionExample.ViewModels
 
         private void ToggleWebServiceExecute()
         {
-            if (!_webCamService.IsRunning)
+            if (!_faceDetectionService.IsRunning)
             {
-                _webCamService.RunServiceAsync();
+                _faceDetectionService.RunServiceAsync();
             }
             else
             {
-                _webCamService.CancelServiceAsync();
+                _faceDetectionService.CancelServiceAsync();
             }
         }
     }
