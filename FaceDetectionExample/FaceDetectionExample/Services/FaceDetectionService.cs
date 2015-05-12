@@ -20,8 +20,8 @@ namespace FaceDetectionExample.Services
         private List<Rectangle> _faces = new List<Rectangle>();
         private List<Rectangle> _eyes = new List<Rectangle>();
 
-        public event ImageWithDetectionChangedEventHndler ImageWithDetectionChanged;
-        public delegate void ImageWithDetectionChangedEventHndler(object sender, Image<Bgr, Byte> image);
+        public event ImageWithDetectionChangedEventHandler ImageWithDetectionChanged;
+        public delegate void ImageWithDetectionChangedEventHandler(object sender, Image<Bgr, Byte> image);
 
         public FaceDetectionService()
         {
@@ -41,44 +41,46 @@ namespace FaceDetectionExample.Services
             }
         }
 
-        private bool isRunning = false;
+        private bool isDetecting = false;
         private async void _webCamService_ImageChanged(object sender, Image<Bgr, byte> image)
         {
-            bool isDetecting = false;
-
-            if (!isRunning)
-            {
-                isRunning = true;
-                isDetecting = true;
-                var result = await DetectAsync(image);
-                //var result = await DetectFacesAsync(image);
-                //_faces = result;
-
-                _faces = result.Item1;
-                _eyes = result.Item2;
-
-                isRunning = false;
-            }
+            bool isDelayed = false;
 
             if (!isDetecting)
             {
-                foreach (Rectangle face in _faces)
-                    image.Draw(face, new Bgr(Color.Red), 2);
-                foreach (Rectangle eye in _eyes)
-                    image.Draw(eye, new Bgr(Color.Blue), 1);
+                isDetecting = true;
 
+                var result = await DetectFacesAsync(image);
+
+                isDelayed = true;
+                _faces = result;
+
+                isDetecting = false;
+            }
+
+            if (!isDelayed)// to prevent displaing delayed image
+            {
+                DrawRectangles(image);
                 RaiseImageWithDetectionChangedEvent(image);
             }
         }
 
-        private Task<Tuple<List<Rectangle>, List<Rectangle>>> DetectAsync(Image<Bgr, byte> image)
+        private void DrawRectangles(Image<Bgr, byte> image)
+        {
+            foreach (Rectangle face in _faces)
+                image.Draw(face, new Bgr(Color.Red), 2);
+            foreach (Rectangle eye in _eyes)
+                image.Draw(eye, new Bgr(Color.Blue), 1);
+        }
+
+        private Task<Tuple<List<Rectangle>, List<Rectangle>>> DetectFacesAndEyesAsync(Image<Bgr, byte> image)
         {
             return Task.Run(() =>
             {
                 List<Rectangle> faces = new List<Rectangle>();
                 List<Rectangle> eyes = new List<Rectangle>();
 
-                Detect(image, faces, eyes);
+                DetectFaceAndEyes(image, faces, eyes);
 
                 return new Tuple<List<Rectangle>, List<Rectangle>>(faces, eyes);
             });
@@ -137,7 +139,7 @@ namespace FaceDetectionExample.Services
             }
         }
 
-        private void Detect(Image<Bgr, Byte> image, List<Rectangle> faces, List<Rectangle> eyes)
+        private void DetectFaceAndEyes(Image<Bgr, Byte> image, List<Rectangle> faces, List<Rectangle> eyes)
         {
 #if !IOS
             if (GpuInvoke.HasCuda)
